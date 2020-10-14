@@ -58,12 +58,12 @@ class Node:
 
 
 class MCTS:
-    def __init__(self, game, policy_value_fn, c_uct, n_playout):
+    def __init__(self, game, policy_value_fn, c_uct, playout_n):
         self.game = game
         self.policy = policy_value_fn
         self.root = Node(None, 1.0, None, 1, game)
         self.c_uct = c_uct
-        self.n_playout = n_playout
+        self.playout_n = playout_n
 
         self.game_node = self.root
 
@@ -93,11 +93,14 @@ class MCTS:
     def back_propagate(node, value):
         node.backpropagation(value)
 
-    def start_exploring(self):
-        for i in range(self.n_playout):
+    def playout(self):
+        for i in range(self.playout_n):
             selected_node = self.selection()
             value = self.expansion(selected_node)
             self.back_propagate(selected_node, value)
+
+    def move(self):
+        pass
 
 # Consider replace 1,2 with -1 and 1 for player 1 and 2
 # The part of finding action with the maximum UCB value can be optimized
