@@ -56,6 +56,13 @@ class Node:
         if self.parent is not None:
             self.parent.backpropagation(-value)
 
+    def generate_data(self, data):
+        # TODO: trying to finish this!!!
+        if self.parent is None:
+            data = []
+        else:
+            self.parent.generate_data(data)
+
 
 class MCTS:
     def __init__(self, game, policy_value_fn, c_uct, playout_n):
@@ -64,6 +71,7 @@ class MCTS:
         self.root = Node(None, 1.0, None, 1, game)
         self.c_uct = c_uct
         self.playout_n = playout_n
+        self.data_buffer = []
 
         self.game_node = self.root
 
@@ -81,26 +89,33 @@ class MCTS:
                                         col=node.action[1],
                                         board=node_state):
             # TODO:有一个小问题，这个node是game over node，假设player是1，则winner是上一层的2
-            return node.player
+            return node.player, True
 
         available_action = self.game.get_available_action(node_state)
         # TODO: corresponding function will be added later
         prior_p, value = self.policy.evaluate(node_state, available_action)
         node.expand(prior_p)
-        return value
+        return value, False
 
     @staticmethod
     def back_propagate(node, value):
         node.backpropagation(value)
 
-    def playout(self):
-        for i in range(self.playout_n):
+    def play_until_end(self):
+        while True:
             selected_node = self.selection()
-            value = self.expansion(selected_node)
+            value, game_over = self.expansion(selected_node)
             self.back_propagate(selected_node, value)
+            if game_over:
+                data = selected_node.generate_data()
+                return
 
     def move(self):
         pass
+
+    def train(self):
+        while True:
+            self.play_until_end()
 
 # Consider replace 1,2 with -1 and 1 for player 1 and 2
 # The part of finding action with the maximum UCB value can be optimized

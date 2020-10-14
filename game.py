@@ -76,4 +76,3 @@ class Game:
 
     def restart(self, width, height, n_to_win):
         self.board = Board(width, height, n_to_win)
-
