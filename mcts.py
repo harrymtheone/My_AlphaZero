@@ -42,15 +42,17 @@ class Node:
             # move to the selected node
             self.children[max_ucb_child].select()
 
-    def expand(self, prior_p, value):
+    def expand(self, prior_p):
+        # initialize children and calculate their UCB value
         for action in prior_p:
             self.children[action] = Node(parent=self,
                                          prior_p=prior_p[action],
                                          action=action,
                                          player=2 if self.player == 1 else 1,
                                          game=self.game)
+            self.children[action].ucb = C * prior_p[action] * math.sqrt(self.n_visits)
 
-    def backpropagation(self, value):
+    def back_propagate(self, value):
         self.Q += value  # TODO:Will value of Q overflow???
         self.n_visits += 1
         self.ucb = self.Q / self.n_visits + C * self.P * math.sqrt(self.parent.n_visits) / (1 + self.n_visits)
@@ -99,18 +101,26 @@ class MCTS:
         return self.game_node.select()
 
     def expansion(self, node):
-        # TODO: what if the selected node is a game over node
         node_state = node.get_state()
+        # if current node is a game over node, skip expansion, return reward
         if self.game.check_if_game_ends(player=node.player,
                                         row=node.action[0],
                                         col=node.action[1],
                                         board=node_state):
+            # TODO:有一个小问题，这个node是game over node，假设player是1，则winner是上一层的2
             return node.player
 
         available_action = self.game.get_available_action(node_state)
         # TODO: corresponding function will be added later
         prior_p, value = self.policy.evaluate(node_state, available_action)
-        node.expand(prior_p, value)
+        node.expand(prior_p)
+        return value
 
-    def backpropagation(self):
+    @staticmethod
+    def back_propagate(node, value):
+        node.backpropagation(value)
+
+    def start_exploring(self):
         pass
+
+# Consider replace 1,2 with -1 and 1 for player1 and 2
