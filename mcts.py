@@ -7,7 +7,7 @@ class Node:
     def __init__(self, parent, prior_p, action, player, game):
         self.parent = parent  # parent node
         self.action = action  # corresponding action
-        self.player = player  # 1 for black 2 for white
+        self.player = player  # 1 for black -1 for white
         self.children = {}  # a map from action to Node
         self.n_visits = 0  # number of time visited
         self.Q = 0  # total value received
@@ -15,9 +15,6 @@ class Node:
         self.P = prior_p  # prior probability
         self.game = game  # game function
         self.is_game_over_node = False
-
-    def init_node(self):
-        pass
 
     def get_state(self):
         if self.action is None:
@@ -32,15 +29,15 @@ class Node:
             return self
         else:
             max_ucb = 0
-            max_ucb_child = None
-            for child_key in self.children:
-                ucb = self.children[child_key].ucb
+            max_ucb_action = None
+            for action in self.children:
+                ucb = self.children[action].ucb
                 if ucb >= max_ucb:
                     max_ucb = ucb
-                    max_ucb_child = child_key
+                    max_ucb_action = action
 
             # move to the selected node
-            self.children[max_ucb_child].select()
+            return self.children[max_ucb_action].select()
 
     def expand(self, prior_p):
         # initialize children and calculate their UCB value
@@ -48,7 +45,7 @@ class Node:
             self.children[action] = Node(parent=self,
                                          prior_p=prior_p[action],
                                          action=action,
-                                         player=2 if self.player == 1 else 1,
+                                         player=-1 if self.player == 1 else 1,
                                          game=self.game)
             self.children[action].ucb = C * prior_p[action] * math.sqrt(self.n_visits)
 
@@ -71,30 +68,6 @@ class MCTS:
         self.game_node = self.root
 
     def selection(self):
-        """
-        from current state (self.game_node)
-        keep on choosing node (based on UCB value)
-        until an unexpanded node is encountered.
-        """
-        current_node = self.game_node  # node of each selection step
-        while True:
-            # select child node with maximum UCB value
-            max_ucb = 0
-            max_ucb_child = None
-            for child_key in current_node.children:
-                ucb = current_node.children[child_key].ucb
-                if ucb >= max_ucb:
-                    max_ucb = ucb
-                    max_ucb_child = child_key
-
-            # move to the selected node
-            current_node = current_node.children[max_ucb_child]
-
-            # end selection process when node is not expanded (leaf node)
-            if current_node.children == {}:
-                return current_node
-
-    def selection_2(self):
         """
         the second kind of implementation
         """
@@ -121,6 +94,10 @@ class MCTS:
         node.backpropagation(value)
 
     def start_exploring(self):
-        pass
+        for i in range(self.n_playout):
+            selected_node = self.selection()
+            value = self.expansion(selected_node)
+            self.back_propagate(selected_node, value)
 
-# Consider replace 1,2 with -1 and 1 for player1 and 2
+# Consider replace 1,2 with -1 and 1 for player 1 and 2
+# The part of finding action with the maximum UCB value can be optimized
